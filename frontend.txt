@@ -1,0 +1,183 @@
+
+### **Complete Frontend Prompt for MediQuick Application (React) - Version 2.1 (Updated)**
+
+**Objective:** Create a single-page, responsive React application that provides a distinct and comprehensive dashboard for each authenticated user role (Admin, Customer, Institution, Salesperson, Doctor). The application must facilitate specific interactions, including advanced QR code workflows, detailed history views, and role-specific data management, ensuring a "real and working" experience within the client-side context. This version incorporates detailed registration fields and an admin approval process for Salespersons and Institutions.
+
+---
+
+**I. General Application Structure & Common Elements:**
+
+1.  **Core Framework**: React.js (functional components and hooks).
+2.  **Styling**: Exclusively Tailwind CSS for all styling. Ensure modern aesthetics with rounded corners on all interactive elements and containers. The primary font should be 'Inter'.
+3.  **Responsiveness**: The layout must be fully responsive, ensuring optimal viewing and usability on all devices (mobile, tablet, desktop) and orientations. Avoid horizontal scrolling. Use Tailwind's responsive prefixes (`sm:`, `md:`, `lg:`) extensively.
+4.  **Icons**: Use `lucide-react` for all icons where applicable. For general medical/pill icon, use `fas fa-pills`.
+5.  **Initial Loading State**: Before Firebase authentication and role determination are complete, display a centered loading spinner (`animate-spin`) and a "Loading application..." message.
+6.  **Header (Always Visible)**:
+    * **Left Side**: "MediQuick" title (`text-2xl font-bold`) with a pill icon (`fas fa-pills`).
+    * **Right Side**:
+        * Prominent display of the current authenticated `User ID` and their `(Role)` in a distinct, rounded badge (e.g., `bg-emerald-100 text-emerald-800`).
+        * **Role Switcher (for non-Admin users)**: If the user's role is *not* 'admin', provide a dropdown (`<select>`) labeled "Switch Role" containing options for 'Customer', 'Institution', 'Salesperson', 'Doctor'. Selecting an option will update the user's role in Firestore and re-render the appropriate dashboard.
+7.  **Global Message Display**: A dynamic message area (`<div>`) at the top of the main content.
+    * Green for success messages (e.g., `bg-green-100 text-green-800`) with a `CheckCircle` icon.
+    * Red for error messages (e.g., `bg-red-100 text-red-800`) with an `XCircle` icon.
+    * Messages should automatically disappear after 3 seconds.
+8.  **Footer (Always Visible)**: A simple, centered footer with copyright information.
+9.  **Role Selection Screen (Initial View for New/Unassigned Users)**:
+    * If a user's role is not yet determined or is a default unassigned role, display a central welcome message ("Welcome to MediQuick! Please select your role to proceed:") with large, distinct, colorful buttons for each role: 'Customer', 'Institution', 'Salesperson', 'Doctor'. Clicking these buttons will set the user's role in their Firestore profile.
+    * **Crucial Note for Admin Role**: Below the role selection buttons, include a small, clear text note: "To access Admin features, your User ID must be manually assigned the 'admin' role in the Firebase console. No user can self-assign as Admin, nor is there an in-app mail confirmation process for admin assignment."
+
+---
+
+**II. Admin Dashboard Requirements (Visible only if `userRole` is 'admin'):**
+
+This dashboard is exclusively for managing core application data and approving new accounts.
+
+1.  **Main Title**: "Admin Dashboard" with a `Key` icon.
+2.  **Layout**: Use a grid layout to organize sections for adding, viewing, and managing data.
+3.  **Sections for Adding Data (Forms)**: Each section should be a distinct card.
+    * **"Add New Product"** (`PlusCircle` icon):
+        * Fields: Product Name (text), Price (number, 2 decimal places), Serial Number (text), Coins Assigned (integer, `min="0"`).
+        * Button: "Add Product".
+    * **"Add New Doctor"** (`Stethoscope` icon):
+        * Fields: Doctor Name (text), Specialty (text, e.g., "Cardiology", "General Physician"), Contact Info (text).
+        * Button: "Add Doctor".
+    * **"Register New Salesperson Request"** (`Briefcase` icon):
+        * Fields: Salesperson Name (text), Contact Number (text), Bank Details (text), Address (text), Age (number), CNIC (text).
+        * Button: "Submit Salesperson Request".
+        * **Note**: This form submits a *request* which an admin will later approve.
+    * **"Register New Institution Request"** (`Building` or `Hospital` icon - if available in Lucide, otherwise `Home`):
+        * Fields: Institution Name (text), Contact Number (text), Bank Details (text), Address (text), CNIC (text - for the primary contact person/entity).
+        * Button: "Submit Institution Request".
+        * **Note**: This form submits a *request* which an admin will later approve.
+4.  **Sections for Viewing and Managing Data (Tables)**: Each section should be a distinct card.
+    * **"Available Products"** (`Package` icon): Table displaying Name, Price, Serial No., Coins.
+    * **"Registered Doctors"** (`Stethoscope` icon): Table displaying Name, Specialty, Contact. Doctors should be visually grouped or clearly indicated as 'General Physician' or 'Specialist' (with their specific specialty).
+    * **"Registered Customers"** (`Users` icon): Table displaying Name, Contact.
+    * **"Pending Salesperson Requests"** (`Briefcase` icon):
+        * Table displaying: Name, Contact, Bank Details, Address, Age, CNIC, Request Date.
+        * Action button for each request: "Approve Salesperson".
+        * **Functionality for "Approve Salesperson"**:
+            * Prompts for "Manager Assigned ID" (text input).
+            * Updates the salesperson's profile with `status: 'approved'` and `managerAssignedId`.
+            * (Future thought: Could also update their user role to 'salesperson' if they don't have one, but for now, assume they select their role after approval).
+    * **"Approved Salespersons"** (`Briefcase` icon):
+        * Table displaying: Name, Contact, Bank Details, Address, Age, CNIC, Manager Assigned ID, Status.
+    * **"Pending Institution Requests"** (`Building` or `Hospital` icon):
+        * Table displaying: Name, Contact, Bank Details, Address, CNIC, Request Date.
+        * Action button for each request: "Approve Institution".
+        * **Functionality for "Approve Institution"**:
+            * Updates the institution's profile with `status: 'approved'`.
+            * (Future thought: Could also update their user role to 'institution' if they don't have one).
+    * **"Approved Institutions"** (`Building` or `Hospital` icon):
+        * Table displaying: Name, Contact, Bank Details, Address, CNIC, Status.
+    * All tables should be scrollable (`overflow-x-auto`) for responsiveness and have clear headers.
+
+---
+
+**III. Customer Dashboard Requirements (Visible only if `userRole` is 'customer'):**
+
+1.  **Main Title**: "Customer Dashboard" with a `Users` icon.
+2.  **"Search Products" Section**:
+    * Input field: "Search Product Name".
+    * As the user types, dynamically filter the `Available Products` list below to show only matching products.
+3.  **"Available Products" Section**:
+    * Display a list/table of products.
+    * Each product should have a "Buy Now" button.
+    * **Functionality**: Clicking "Buy Now" creates a new order in Firestore with `status: 'pending_salesperson_pickup'`.
+4.  **"Your Order History (Last 30 Days)" Section**:
+    * Table displaying: Product Name, Price, Status (e.g., "pending salesperson pickup", "in delivery", "delivered"), Order Date.
+    * Only show orders placed by the current customer within the last 30 days.
+    * Order Date should be formatted for readability.
+    * Include the Order ID in a column for reference.
+    * **QR Code Proof**: For `delivered` orders, display the QR code content (Order ID + Salesperson ID) as proof.
+5.  **"Confirm Delivery & Payment (Scan Salesperson QR)" Section**:
+    * **Title**: "Confirm Delivery & Payment" with `Scan` icon.
+    * A text input field labeled "Scan Salesperson QR Code (Order/Appointment ID)".
+    * Button: "Confirm Transfer & Payment".
+    * **Functionality**:
+        1.  Customer receives product/completes checkup.
+        2.  Salesperson presents *their generated QR code* (containing Order ID or Patient Offer ID and Salesperson ID).
+        3.  Customer scans (enters the QR content).
+        4.  App validates: Is this order/appointment for *this* customer/patient? Is it in 'in\_delivery' (for orders) or 'assigned\_to\_salesperson' (for appointments) status by the salesperson?
+        5.  If valid, update the order/offer status to 'delivered' or 'completed', record `cashReceived: true` or `paymentConfirmed: true`.
+        6.  **Crucially**: This action triggers the coin transfer to the salesperson for product deliveries OR records payment for checkups.
+        7.  The QR code content (Order ID / Patient Offer ID) and the Salesperson ID should be saved in the customer's history for 30 days as proof.
+6.  **"Donate Coins to Institutions" Section**:
+    * **Title**: "Donate Coins to Institutions" with `Gift` icon.
+    * A dropdown menu to select an "Institution" (list *only approved* institutions from the `institutions` collection, displaying "Institution Name (ID: [Institution User ID])").
+    * An input field for "Amount to Donate" (number, positive integer, no specific multiples required).
+    * Button: "Donate Coins".
+    * **Functionality**: Transfers the specified amount of coins to the selected institution's balance and records a donation transaction in the institution's history.
+7.  **"Book Doctor Appointment" Section**:
+    * **Title**: "Book Doctor Appointment" with `CalendarCheck` icon.
+    * **Doctor Listing**:
+        * Display two sub-sections: "General Physicians" and "Specialists".
+        * Under "General Physicians", list all *approved* doctors with `specialty: 'General Physician'`.
+        * Under "Specialists", list all *approved* doctors with `specialty` not equal to 'General Physician', and for each, clearly state their `specialty`.
+        * Each doctor entry should have a "Request Checkup" button.
+    * **Functionality**: Clicking "Request Checkup" opens a modal or prompts for a "Reason for Checkup". This creates a new `patientOffer` in Firestore with `status: 'pending'`, `patientId: currentUserId`, and `doctorId: selectedDoctorId`.
+
+---
+
+**IV. Institution Dashboard Requirements (Visible only if `userRole` is 'institution'):**
+
+1.  **Main Title**: "Institution Dashboard" with a `Coins` icon.
+2.  **"Your Coin Balance" Section**:
+    * Prominently display the "Current Coins" balance (`DollarSign` icon).
+    * **No product ordering or appointment booking options.**
+3.  **"Next Withdrawal Date" Section**:
+    * **No "Withdraw" button.**
+    * Display text: "Next Withdrawal Date: [Calculated Date]".
+    * **Calculation**: This date should be the 1st day of the *next* month. If the current date is the 1st of the month, it should show the 1st of the month after next.
+4.  **"Received Coin History (Last 30 Days)" Section**:
+    * Table displaying: Amount, Donor Name (with Donor ID in parentheses), Date.
+    * Only show coins received by this institution within the last 30 days.
+    * Date should be formatted for readability.
+
+---
+
+**V. Salesperson Dashboard Requirements (Visible only if `userRole` is 'salesperson'):**
+
+1.  **Main Title**: "Salesperson Dashboard" with a `Briefcase` icon.
+2.  **Salesperson Profile Details**: Display the salesperson's `Name`, `Contact Number`, `Bank Details`, `Address`, `Age`, `CNIC`, and `Manager Assigned ID`.
+3.  **"Scan Pharmacy/Doctor QR (Take Order/Appointment)" Section**:
+    * **Title**: "Scan Pharmacy/Doctor QR" with `Scan` icon.
+    * A text input field labeled "Enter QR Code Content (Order/Appointment ID)".
+    * Button: "Take Order/Appointment".
+    * **Functionality**:
+        1.  Salesperson scans (enters) a QR code generated by the Pharmacy (for orders) or Doctor (for accepted appointments).
+        2.  App validates: Is this order/appointment `pending_salesperson_pickup` (for orders) or `accepted` (for appointments) and not yet assigned to a salesperson?
+        3.  If valid, it assigns the order/appointment to the current salesperson (`salespersonId: currentUserId`), updates its status to 'in\_delivery' (for orders) or 'assigned\_to\_salesperson' (for appointments), and records `pickupTime`.
+4.  **"My Assigned Orders/Appointments" Section**:
+    * Table displaying: Order/Offer ID, Product Name/Patient Name, Customer/Patient Name, Status.
+    * Only show orders/offers currently assigned to the logged-in salesperson (`salespersonId == currentUserId`) and with `status: 'in_delivery'` (for orders) or 'assigned\_to\_salesperson' (for appointments).
+    * Action button for each: "Generate Customer QR".
+    * **Functionality**: Clicking "Generate Customer QR" will display a modal or a dedicated area with a QR code. The content of this QR code will be a JSON string containing the `orderId`/`patientOfferId` and the `salespersonId`. This QR is then presented to the customer/patient for their scan to confirm delivery/payment.
+    * **Note on 1-hour relist**: Include a small, clear text note below this section explaining that the 1-hour relist functionality for uncompleted tasks (if a salesperson fails to complete a task within an hour) requires a server-side process (e.g., Firebase Cloud Function) and cannot be reliably implemented purely client-side.
+5.  **"Your Coin History (Last 30 Days)" Section**:
+    * Table displaying: Amount, Source (e.g., "From [Customer Name] (Order: [Order ID])" or "From [Patient Name] (Checkup: [Offer ID])"), Date.
+    * Only show coins earned by this salesperson within the last 30 days.
+    * Date should be formatted for readability.
+
+---
+
+**VI. Doctor Dashboard Requirements (Visible only if `userRole` is 'doctor'):**
+
+1.  **Main Title**: "Doctor Dashboard" with a `Stethoscope` icon.
+2.  **Doctor Profile Details**: Display the doctor's `Name`, `Specialty`, `Contact Info`.
+3.  **"Purchase Products" Section**:
+    * A dropdown menu to select an available product.
+    * Button: "Purchase Product".
+    * **Functionality**: This allows the doctor to place an order for a product, similar to a customer, but with a specific `status: 'purchased_by_doctor'`.
+4.  **"Patient Checkup Offers" Section**:
+    * Table displaying: Patient Name, Reason for Checkup, Offered On (Date).
+    * Only show offers directed to the current doctor with `status: 'pending'`.
+    * Action button for each offer: "Accept Offer".
+    * **Functionality**: Clicking "Accept Offer" changes the offer status to 'accepted'. Upon acceptance, a **QR code content** (containing `patientOfferId` and `doctorId`) should be displayed or made available for the **salesperson to scan**. This QR represents the doctor's readiness for the checkup.
+5.  **"Accepted Appointments (Generate Salesperson QR)" Section**:
+    * Table displaying: Patient Name, Reason, Status, Accepted On.
+    * Only show offers with `status: 'accepted'` and `doctorId: currentUserId`.
+    * Action button for each: "Generate Salesperson QR".
+    * **Functionality**: Clicking this button will display a modal or a dedicated area with a QR code. The content of this QR code will be a JSON string containing the `patientOfferId` and the `doctorId`. This QR is then presented to the salesperson to scan.
+
+---
